@@ -681,7 +681,11 @@ class VisualMQTTServer {
             clearInterval(this.autoPublishers[messageType].timer);
             this.autoPublishers[messageType] = null;
         }
-        const ms = intervalMs || this.messageDefaultFrequencies[messageType] || 1000;
+        // const ms = intervalMs || this.messageDefaultFrequencies[messageType] || 1000;
+        const hz = this.messageDefaultFrequencies[messageType];
+        const defaultMs = hz ? 1000 / hz : 1000; 
+        const ms = intervalMs || defaultMs;
+
         const publishTopic = topic || messageType;
         const template = this.downlinkConfigs[messageType] || this.generateMockData(messageType) || {};
 

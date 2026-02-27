@@ -269,9 +269,9 @@ class UDPVideoStreamer {
 
             // 构造 8 字节头部
             const header = Buffer.alloc(8);
-            header.writeUInt16BE(this.frameNumber & 0xFFFF, 0);      // 帧编号 (2 bytes)
-            header.writeUInt16BE(packetIndex, 2);                     // 分片序号 (2 bytes)
-            header.writeUInt32BE(totalBytes, 4);                      // 总字节数 (4 bytes)
+            header.writeUInt16LE(this.frameNumber & 0xFFFF, 0);       // 帧编号 (2 bytes)
+            header.writeUInt16LE(packetIndex, 2);                     // 分片序号 (2 bytes)
+            header.writeUInt32LE(totalBytes, 4);                      // 总字节数 (4 bytes)
 
             // 合并头部和载荷
             const packet = Buffer.concat([header, payload]);

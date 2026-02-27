@@ -12,6 +12,7 @@ proto/messages.d.ts
 
 # 接收的视频文件
 received_video/
+VideoSource/
 
 # OS 文件
 .DS_Store
