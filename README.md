@@ -2,6 +2,9 @@
 
 > 用于 RoboMaster 2026 自定义客户端开发的 UDP 视频流和 MQTT 数据模拟服务器
 
+>[!NOTE] 
+> 本项目是 SCAU Taurus 针对 Gen-tau-client 的改动版本
+
 [![Node.js](https://img.shields.io/badge/Node.js-v14+-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/Version-2.0.0-orange.svg)](package.json)
