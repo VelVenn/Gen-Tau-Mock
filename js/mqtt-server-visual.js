@@ -371,6 +371,15 @@ class VisualMQTTServer {
                 
                 // 清理消息描述：移除序号和重复的消息名
                 let cleanedDescription = messageComments.join(' ');
+                
+                // 提取频率
+                const freqMatch = cleanedDescription.match(/频率\s*[:：]?\s*(\d+(?:\.\d+)?)Hz/i);
+                if (freqMatch) {
+                    this.messageDefaultFrequencies[currentMessage] = parseFloat(freqMatch[1]);
+                } else if (cleanedDescription.includes('触发')) {
+                    this.messageDefaultFrequencies[currentMessage] = 0; // 0代表触发式发送
+                }
+                
                 // 移除 "2.2.X MessageName" 格式
                 cleanedDescription = cleanedDescription.replace(/^\d+\.\d+\.\d+\s+\w+\s*/, '');
                 // 移除 "用途:" 前缀（保留用途内容）
@@ -401,11 +410,36 @@ class VisualMQTTServer {
                     
                     // 检查之前的注释中是否有枚举定义
                     let enumComment = null;
-                    for (const fc of fieldComments) {
-                        if (fc.includes(fieldName) && fc.includes('枚举')) {
-                            enumComment = fc;
-                            break;
+                    let parsedEnum = null;
+                    
+                    if (comment && comment.includes('枚举')) {
+                        enumComment = comment;
+                    }
+                    if (!enumComment) {
+                        for (const fc of fieldComments) {
+                            if (fc.includes(fieldName) && fc.includes('枚举')) {
+                                enumComment = fc;
+                                break;
+                            }
                         }
+                        if (!enumComment) {
+                            // 只有当有明确指示说是当前的消息级别枚举或者是通用的才做兜底
+                            const fallbackEnum = fieldComments.find(fc => fc.includes('枚举') && !fc.match(/[a-zA-Z_]+\s*枚举/));
+                            if (fallbackEnum) enumComment = fallbackEnum;
+                        }
+                    }
+
+                    if (enumComment) {
+                        const enumKvMatch = enumComment.match(/(\d+)\s*[:=：]\s*([^,，]+)/g);
+                        if (enumKvMatch) {
+                            parsedEnum = enumKvMatch.map(kv => {
+                                const parts = kv.split(/[:=：]/);
+                                return { value: parseInt(parts[0].trim()), label: parts[1].trim() };
+                            });
+                        }
+                        
+                        // 从 fieldComments 中移除已被使用的枚举注释，防止之后不相关的字段复用该枚举
+                        fieldComments = fieldComments.filter(fc => fc !== enumComment);
                     }
                     
                     const fieldDesc = fieldComments.filter(fc => !fc.includes('枚举')).join(' ') || comment || '';
@@ -417,7 +451,8 @@ class VisualMQTTServer {
                         options: options || '',
                         comment: comment || '',
                         description: fieldDesc,
-                        enumComment: enumComment  // 保存枚举注释
+                        enumComment: enumComment,  // 保存枚举注释
+                        parsedEnum: parsedEnum // 添加结构化的解析结果
                     };
                     
                     // 如果有枚举注释，也存储到消息的enumComments中
@@ -425,7 +460,8 @@ class VisualMQTTServer {
                         this.messageMetadata[currentMessage].enumComments[fieldName] = enumComment;
                     }
                     
-                    fieldComments = [];
+                    // 只清空不包含枚举的注释，让其余字段复用枚举注释
+                    fieldComments = fieldComments.filter(fc => fc.includes('枚举'));
                 }
                 
                 // 消息结束
@@ -788,22 +824,45 @@ class VisualMQTTServer {
 
         const parsed = {};
         
-        for (const [fieldName, value] of Object.entries(data)) {
+        // Proto3 省略默认值（0, false, 空字符串 等）。
+        // 我们遍历 metadata.fields 里的所有定义，如果 data 里不存在，主动给它赋默认值再解析。
+        const normalizedData = { ...data };
+        for (const fieldName of Object.keys(metadata.fields)) {
+            // 检查 camelCase 和 snake_case 是否存在于 payload 中
+            const camelName = fieldName.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+            if (normalizedData[fieldName] === undefined && normalizedData[camelName] === undefined) {
+                // 如果 payload 里真的没有，判定为 proto3 omit default value
+                const type = metadata.fields[fieldName].type;
+                if (type === 'bool') {
+                    normalizedData[fieldName] = false;
+                } else if (type === 'string' || type === 'bytes') {
+                    normalizedData[fieldName] = '';
+                } else {
+                    normalizedData[fieldName] = 0; // uint32, int32, float...
+                }
+            }
+        }
+        
+        for (const [fieldName, value] of Object.entries(normalizedData)) {
             // 尝试查找字段元数据（支持camelCase和snake_case）
             let fieldMeta = metadata.fields[fieldName];
+            let realFieldName = fieldName;
+            
             if (!fieldMeta) {
                 // 尝试转换为snake_case
                 const snakeName = fieldName.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
                 fieldMeta = metadata.fields[snakeName];
+                if (fieldMeta) realFieldName = snakeName;
             }
             if (!fieldMeta) {
                 // 尝试转换为camelCase
                 const camelName = fieldName.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
                 fieldMeta = metadata.fields[camelName];
+                if (fieldMeta) realFieldName = camelName;
             }
             
             if (!fieldMeta) {
-                parsed[fieldName] = { value, display: String(value) };
+                parsed[realFieldName] = { value, display: String(value) };
                 continue;
             }
 
@@ -858,17 +917,24 @@ class VisualMQTTServer {
                 }
             }
             // 解析枚举值（作为fallback）
-            else if (fieldMeta.type === 'uint32' && description) {
-                const enumComment = this.findEnumComment(metadata, fieldName);
-                if (enumComment) {
-                    const enumValue = this.parseEnumValue(enumComment, value);
-                    if (enumValue) {
-                        display = `${value} (${enumValue})`;
+            else if ((fieldMeta.type === 'uint32' || fieldMeta.type === 'int32')) {
+                if (fieldMeta.parsedEnum && fieldMeta.parsedEnum.length > 0) {
+                    const mapping = fieldMeta.parsedEnum.find(m => m.value === value);
+                    if (mapping) {
+                        display = `${value} (${mapping.label})`;
+                    }
+                } else if (description) {
+                    const enumComment = this.findEnumComment(metadata, fieldName);
+                    if (enumComment) {
+                        const enumValue = this.parseEnumValue(enumComment, value);
+                        if (enumValue) {
+                            display = `${value} (${enumValue})`;
+                        }
                     }
                 }
             }
 
-            parsed[fieldName] = {
+            parsed[realFieldName] = {
                 value: value,
                 display: display,
                 description: description,
@@ -1664,7 +1730,23 @@ class VisualMQTTServer {
                 \`;
             }
             
-            // 枚举类型 - 检查是否有枚举注释（作为fallback）
+            // 枚举类型 - 优先检查是否有解析好的枚举结构（作为fallback）
+            if (fieldMeta.parsedEnum && fieldMeta.parsedEnum.length > 0) {
+                const optionsHtml = fieldMeta.parsedEnum.map(opt => 
+                    \`<option value="\${opt.value}">\${opt.value}: \${opt.label}</option>\`
+                ).join('');
+                
+                return \`
+                    <div class="field-input-section" onclick="event.stopPropagation()">
+                        <div class="field-input-label">✏️ 选择值</div>
+                        <select class="field-select" id="\${inputId}" data-type="\${fieldMeta.type}">
+                            \${optionsHtml}
+                        </select>
+                    </div>
+                \`;
+            }
+
+            // 枚举类型 - 检查是否有枚举注释（作为fallback老逻辑）
             const enumComment = fieldMeta.enumComment;
             
             if (enumComment || (fieldMeta.type === 'uint32' && description.includes('枚举'))) {
