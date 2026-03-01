@@ -307,9 +307,13 @@ function renderDownlinkMessages(messagesData) {
         const sendBtn = document.createElement('button');
         sendBtn.className = 'send-message-btn';
         sendBtn.textContent = '📤 发送此消息';
+
+        const sendStatus = document.createElement('span');
+        sendStatus.className = 'send-status-indicator';
+
         sendBtn.onclick = (e) => {
             e.stopPropagation();
-            window.sendDownlinkMessage(msg.name);
+            window.sendDownlinkMessage(msg.name, sendStatus);
         };
 
         const freqLabel = document.createElement('label');
@@ -348,6 +352,7 @@ function renderDownlinkMessages(messagesData) {
         checkLabel.appendChild(document.createTextNode('自动发送'));
 
         opArea.appendChild(sendBtn);
+        opArea.appendChild(sendStatus);
         opArea.appendChild(freqLabel);
         opArea.appendChild(freqInput);
         opArea.appendChild(checkLabel);

@@ -131,7 +131,18 @@ function updateUplinkReceivedData() {
     });
 }
 
-window.sendDownlinkMessage = function(messageName) {
+function showSendStatus(el, success) {
+    if (!el) return;
+    el.textContent = success ? '成功！' : '发送失败';
+    el.style.color = success ? '#2da44e' : '#cf222e';
+    el.style.opacity = '1';
+    clearTimeout(el._fadeTimer);
+    el._fadeTimer = setTimeout(() => {
+        el.style.opacity = '0';
+    }, 2000);
+}
+
+window.sendDownlinkMessage = function(messageName, statusEl) {
     if (!messagesData) return;
     
     const meta = messagesData.serverMessages.find(m => m.name === messageName)?.metadata;
@@ -178,10 +189,17 @@ window.sendDownlinkMessage = function(messageName) {
     })
     .then(r => r.json())
     .then(res => {
-        if (res.error) alert('发送失败: ' + res.error);
-        else console.log('✅ 消息发送成功', res);
+        if (res.error) {
+            showSendStatus(statusEl, false);
+        }
+        else {
+            showSendStatus(statusEl, true);
+        }
     })
-    .catch(console.error);
+    .catch(err => {
+        console.error(err);
+        showSendStatus(statusEl, false);
+    });
 };
 
 window.toggleAutoPublish = function(messageName) {

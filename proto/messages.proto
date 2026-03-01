@@ -54,10 +54,10 @@ message AssemblyCommand {
 message RobotPerformanceSelectionCommand {
 	// shooter 枚举值: 1=冷却优先, 2=爆发优先, 3=英雄近战优先, 4=英雄远程优先
 	// chassis 枚举值: 1=血量优先, 2=爆发优先, 3=英雄近战优先, 4=英雄远程优先
-	// sentrycontrol 枚举值: 1=哨兵自动控制, 2=哨兵半自动控制
+	// sentry_control 枚举值: 0=哨兵自动控制, 1=哨兵半自动控制
 	uint32 shooter       = 1;  // 发射机构性能体系
 	uint32 chassis       = 2;  // 底盘性能体系
-	uint32 sentrycontrol = 3;  // 哨兵控制方式选择
+	uint32 sentry_control = 3;  // 哨兵控制方式选择
 }
 
 // 2.2.24 CommonCommand

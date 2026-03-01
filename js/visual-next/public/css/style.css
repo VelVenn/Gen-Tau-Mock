@@ -374,3 +374,12 @@ h1 {
 .status-inactive {
   background: #dc3545;
 }
+
+.send-status-indicator {
+  font-size: 16px;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  min-width: 20px;
+  display: inline-block;
+}
