@@ -300,7 +300,7 @@ class VisualMQTTServer {
             
             // 清理并解析proto
             const protoTextSanitized = protoText.replace(/^\s*package\s+\S+;\s*$/gm, '');
-            const parsed = protobuf.parse(protoTextSanitized);
+            const parsed = protobuf.parse(protoTextSanitized, { keepCase: true });
             this.protoRoot = parsed.root;
             
             // 解析消息和注释
@@ -512,7 +512,9 @@ class VisualMQTTServer {
                             const obj = MessageType.toObject(decoded, { 
                                 longs: String, 
                                 enums: String, 
-                                bytes: String 
+                                bytes: String,
+                                defaults: true,
+                                keepCase: true
                             });
                             
                             // 解析字段的实际含义
@@ -552,10 +554,13 @@ class VisualMQTTServer {
 
     startHTTP() {
         this.httpServer = http.createServer((req, res) => {
-            // 设置CORS
+            // 设置CORS与缓存控制
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
             res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
             
             if (req.method === 'OPTIONS') {
                 res.writeHead(200);
@@ -879,7 +884,6 @@ class VisualMQTTServer {
             }
             // 解析布尔值
             else if (fieldMeta.type === 'bool') {
-                // 根据字段名称推断含义
                 if (fieldName.includes('button') || fieldName.includes('down')) {
                     display = value ? '按下' : '抬起';
                 } else if (fieldName.includes('is_') || fieldName.includes('can_')) {
@@ -934,7 +938,7 @@ class VisualMQTTServer {
                 }
             }
 
-            parsed[realFieldName] = {
+            parsed[fieldName] = {
                 value: value,
                 display: display,
                 description: description,
@@ -1477,7 +1481,7 @@ class VisualMQTTServer {
         // 加载消息定义
         async function loadMessages() {
             try {
-                const response = await fetch('/api/messages');
+                const response = await fetch('/api/messages?_t=' + Date.now(), { cache: 'no-store' });
                 messagesData = await response.json();
                 
                 renderUplinkMessages();
@@ -1492,6 +1496,8 @@ class VisualMQTTServer {
         function renderUplinkMessages() {
             const container = document.getElementById('uplinkMessages');
             const count = document.getElementById('uplinkCount');
+            
+            container.innerHTML = '';
             
             if (!messagesData || messagesData.clientMessages.length === 0) {
                 container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">暂无上行消息</p>';
@@ -2068,8 +2074,12 @@ class VisualMQTTServer {
         
         // 更新上行消息接收到的数据显示
         function updateUplinkReceivedData(messageType, parsedData) {
+            // 取消息类型的短名称（去掉包名前缀）
+            const shortName = messageType.split('.').pop();
             for (const [fieldName, fieldInfo] of Object.entries(parsedData)) {
-                const valueEl = document.getElementById('value-' + messageType + '-' + fieldName);
+                // 同时尝试全名和短名的DOM的ID
+                const valueEl = document.getElementById('value-' + messageType + '-' + fieldName) 
+                             || document.getElementById('value-' + shortName + '-' + fieldName);
                 if (valueEl) {
                     // 清空原有内容
                     valueEl.innerHTML = '';
@@ -2100,7 +2110,8 @@ class VisualMQTTServer {
         // 刷新历史记录
         async function refreshHistory() {
             try {
-                const response = await fetch('/api/uplink-history');
+                // 加时间戳防止浏览器缓存
+                const response = await fetch('/api/uplink-history?_t=' + Date.now(), { cache: 'no-store' });
                 const history = await response.json();
                 
                 const container = document.getElementById('historyPanel');

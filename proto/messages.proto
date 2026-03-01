@@ -54,10 +54,10 @@ message AssemblyCommand {
 message RobotPerformanceSelectionCommand {
 	// shooter 枚举值: 1=冷却优先, 2=爆发优先, 3=英雄近战优先, 4=英雄远程优先
 	// chassis 枚举值: 1=血量优先, 2=爆发优先, 3=英雄近战优先, 4=英雄远程优先
-	// sentry_control 枚举值: 0=哨兵自动控制, 1=哨兵半自动控制
-	uint32 shooter        = 1;  // 发射机构性能体系
-	uint32 chassis        = 2;  // 底盘性能体系
-	uint32 sentry_control = 3;  // 哨兵控制方式选择
+	// sentrycontrol 枚举值: 1=哨兵自动控制, 2=哨兵半自动控制
+	uint32 shooter       = 1;  // 发射机构性能体系
+	uint32 chassis       = 2;  // 底盘性能体系
+	uint32 sentrycontrol = 3;  // 哨兵控制方式选择
 }
 
 // 2.2.24 CommonCommand
@@ -364,9 +364,9 @@ message AirSupportStatusSync {
 // 2.2.35 Testing
 // 用途: 测试 (频率: 20Hz)
 message Testing {
-    // test 枚举值: 1:未进行空中支援, 2:正在空中支援, 3:空中支援被对方锁定而无法开启
-    // test_int 枚举值: 0:选项0, 1:选项1, 2:选项2
-    uint32 test = 1; 
-    bool test_bi = 2;
-    int32 test_int = 3;
+	// test 枚举值: 1:未进行空中支援, 2:正在空中支援, 3:空中支援被对方锁定而无法开启
+	// test_int 枚举值: 0:选项0, 1:选项1, 2:选项2
+	uint32 test     = 1;
+	bool   test_bi  = 2;
+	int32  test_int = 3;
 }
