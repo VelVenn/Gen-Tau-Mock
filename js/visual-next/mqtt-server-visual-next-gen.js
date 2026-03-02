@@ -5,7 +5,7 @@ const HTTPServer = require("./http-server");
 
 // 配置
 const PROTO_PATH = path.join(__dirname, "..", "..", "proto", "messages.proto");
-const HTTP_PORT = 2026;
+const HTTP_PORT = 8888;
 const MQTT_PORT = 3333;
 const HOST = "127.0.0.1";
 
