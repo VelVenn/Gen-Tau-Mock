@@ -284,27 +284,73 @@ class UDPVideoStreamer {
       `📤 发送帧 #${this.frameNumber}, 大小: ${totalBytes} 字节, 分 ${totalPackets} 个包, 间隔: ${delta} ms (目标: ${this.frameIntervalMs} ms)`,
     );
 
+    const packets = [];
     for (let packetIndex = 0; packetIndex < totalPackets; packetIndex++) {
       const start = packetIndex * payloadSize;
       const end = Math.min(start + payloadSize, totalBytes);
       const payload = frameData.slice(start, end);
 
-      // 构造 8 字节头部
       const header = Buffer.alloc(8);
-      header.writeUInt16LE(this.frameNumber & 0xffff, 0); // 帧编号 (2 bytes)
-      header.writeUInt16LE(packetIndex, 2); // 分片序号 (2 bytes)
-      header.writeUInt32LE(totalBytes, 4); // 总字节数 (4 bytes)
+      header.writeUInt16LE(this.frameNumber & 0xffff, 0); // 帧编号
+      header.writeUInt16LE(packetIndex, 2); // 分片序号
+      header.writeUInt32LE(totalBytes, 4); // 总字节数
 
-      // 合并头部和载荷
-      const packet = Buffer.concat([header, payload]);
-
-      // 发送 UDP 包
-      this.socket.send(packet, this.port, this.host, (err) => {
-        if (err) {
-          console.error(`❌ UDP 发送错误: ${err.message}`);
-        }
-      });
+      packets.push(Buffer.concat([header, payload]));
     }
+
+    // --- 设置概率参数 ---
+    const lossRate = 0.0; // 丢包率
+    const reorderRate = 0; // 乱序概率
+
+    // 1. 模拟丢包
+    const remainingPackets = packets.filter(() => Math.random() >= lossRate);
+
+    if (remainingPackets.length < totalPackets) {
+      console.warn(
+        `⚠️  Loss: Dropped ${totalPackets - remainingPackets.length} packets`,
+      );
+    }
+
+    // 2. 模拟乱序 (随机交换相邻包的位置)
+    for (let i = 0; i < remainingPackets.length - 1; i++) {
+      if (Math.random() < reorderRate) {
+        [remainingPackets[i], remainingPackets[i + 1]] = [
+          remainingPackets[i + 1],
+          remainingPackets[i],
+        ];
+
+        console.warn(`⚠️  Reorder: Swapped packets ${i} and ${i + 1}`);
+      }
+    }
+
+    // 3. 最终发送
+    remainingPackets.forEach((packet) => {
+      this.socket.send(packet, this.port, this.host, (err) => {
+        if (err) console.error(`❌ UDP 发送错误: ${err.message}`);
+      });
+    });
+
+    // for (let packetIndex = 0; packetIndex < totalPackets; packetIndex++) {
+    //   const start = packetIndex * payloadSize;
+    //   const end = Math.min(start + payloadSize, totalBytes);
+    //   const payload = frameData.slice(start, end);
+
+    //   // 构造 8 字节头部
+    //   const header = Buffer.alloc(8);
+    //   header.writeUInt16LE(this.frameNumber & 0xffff, 0); // 帧编号 (2 bytes)
+    //   header.writeUInt16LE(packetIndex, 2); // 分片序号 (2 bytes)
+    //   header.writeUInt32LE(totalBytes, 4); // 总字节数 (4 bytes)
+
+    //   // 合并头部和载荷
+    //   const packet = Buffer.concat([header, payload]);
+
+    //   // 发送 UDP 包
+    //   this.socket.send(packet, this.port, this.host, (err) => {
+    //     if (err) {
+    //       console.error(`❌ UDP 发送错误: ${err.message}`);
+    //     }
+    //   });
+    // }
   }
 
   stop() {
