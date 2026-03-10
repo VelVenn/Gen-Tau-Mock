@@ -1,5 +1,6 @@
 const UDPVideoStreamer = require('./udp-video-streamer');
 const UDPVideoStreamerFast = require('./udp-video-streamer-fast');
+const UDPCameraStreamer = require('./udp-camera-streamer');
 
 // 配置信息
 const CONFIG = {
@@ -23,7 +24,7 @@ async function startServer() {
     try {
         // 启动 UDP 视频流服务
         console.log('📹 正在启动 UDP 视频流服务...');
-        udpStreamer = new UDPVideoStreamer(CONFIG.udp.port, CONFIG.udp.host);
+        udpStreamer = new UDPCameraStreamer(CONFIG.udp.port, CONFIG.udp.host);
         await udpStreamer.start();
         console.log('');
 
