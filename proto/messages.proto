@@ -4,13 +4,15 @@ syntax = "proto3";
 // 版本: V1.2.0 (20260209)
 // 包含所有上行和下行消息，使用 package 区分数据流方向。
 
+// All messages' max QoS is 1 (AT LEAST ONCE)
+
 // -------------------------------------------------------------------------
 // Package 1: 上行消息 (Client -> Server)
 // -------------------------------------------------------------------------
 package rm_client_up;
 
 // 2.2.1 KeyboardMouseControl
-// 用途: 传输鼠标键盘输入，QoS = 1 (频率: 75Hz)
+// 用途: 传输鼠标键盘输入 (频率: 75Hz)
 message KeyboardMouseControl {
 	int32  mouse_x           = 1;  // 鼠标 x 轴移动速度, 负值标识向左移动
 	int32  mouse_y           = 2;  // 鼠标 y 轴移动速度, 负值标识向下移动
@@ -19,10 +21,15 @@ message KeyboardMouseControl {
 	bool   right_button_down = 5;  // 右键是否按下 (false=抬起, true=按下)
 	uint32 keyboard_value    = 6;  // 键盘按键位掩码
 	bool   mid_button_down   = 7;  // 中键是否按下 (false=抬起, true=按下)
+
+	// keyboard_value mask: (bit 0 - 15)
+	// 0: W, 1: S, 2: A, 3: D, 4: Shift, 5: Ctrl
+	// 6: Q, 7: E, 8: R, 9: F, 10: G
+	// 11: Z, 12: X, 13: C, 14: V, 15: B
 }
 
 // 2.2.2 CustomControl
-// 用途: 最大30字节的自定义数据，QoS = 1 (频率: 75Hz)
+// 用途: 最大30字节的自定义数据，QoS <= 1 (频率: 75Hz)
 message CustomControl {
 	bytes data = 1;  // 最大30字节的自定义数据
 }
@@ -30,12 +37,16 @@ message CustomControl {
 // 2.2.17 MapClickInfoNotify
 // 用途: 云台手地图点击标记 (频率: 触发式发送，两次发送间隔不得低于0.5秒)
 message MapClickInfoNotify {
-	uint32 is_send_all = 1;   // 发送范围 (0=指定客户端, 1=除哨兵, 2=包含哨兵)
+	// is_send_all 枚举值: 0=指定客户端, 1=除哨兵, 2=包含哨兵
+	// mode 枚举值: 1=地图,2=对方机器人
+	// type 枚举值: 1=攻击,2=防御,3=警戒,4=自定义
+
+	uint32 is_send_all = 1;   // 发送范围
 	bytes  robot_id    = 2;   // 目标机器人 ID 列表(固定7字节)
-	uint32 mode        = 3;   // 标记模式(1=地图,2=对方机器人)
+	uint32 mode        = 3;   // 标记模式
 	uint32 enemy_id    = 4;   // 标定的对方 ID
 	uint32 ascii       = 5;   // 自定义图标 ASCII 码
-	uint32 type        = 6;   // 标记类型(1=攻击,2=防御,3=警戒,4-自定义)
+	uint32 type        = 6;   // 标记类型
 	uint32 screen_x    = 7;   // 屏幕坐标 X(像素)
 	uint32 screen_y    = 8;   // 屏幕坐标 Y(像素)
 	float  map_x       = 9;   // 地图坐标 X
@@ -45,7 +56,9 @@ message MapClickInfoNotify {
 // 2.2.20 AssemblyCommand
 // 用途: 工程装配指令 (频率: 1Hz)
 message AssemblyCommand {
-	uint32 operation  = 1;  // 装配操作类型(1=确认装配, 2=取消装配)
+	// operation 枚举值: 1=确认装配, 2=取消装配
+
+	uint32 operation  = 1;  // 装配操作类型
 	uint32 difficulty = 2;  // 选中的装配难度
 }
 
@@ -55,15 +68,17 @@ message RobotPerformanceSelectionCommand {
 	// shooter 枚举值: 1=冷却优先, 2=爆发优先, 3=英雄近战优先, 4=英雄远程优先
 	// chassis 枚举值: 1=血量优先, 2=爆发优先, 3=英雄近战优先, 4=英雄远程优先
 	// sentry_control 枚举值: 0=哨兵自动控制, 1=哨兵半自动控制
-	uint32 shooter       = 1;  // 发射机构性能体系
-	uint32 chassis       = 2;  // 底盘性能体系
+
+	uint32 shooter        = 1;  // 发射机构性能体系
+	uint32 chassis        = 2;  // 底盘性能体系
 	uint32 sentry_control = 3;  // 哨兵控制方式选择
 }
 
 // 2.2.24 CommonCommand
 // 用途: 机器人多种常用指令 (频率： 触发式送达，最高不超过10Hz)
 message CommonCommand {
-	// cmd_type 枚举值: 1=兑换17mm发弹量(金币需充足；参数值必须为10的倍数), 2=兑换42mm发弹量(金币需充足), 3=确认复活(读条完成时), 4=兑换立即复活(符合条件时，会立即买活), 5=远程兑换允许发弹量(符合要求时，会立即买弹), 6=远程兑换血量(满足要求时，会立即买血)
+	// cmd_type 枚举值: 1=兑换17mm发弹量(金币需充足；参数值必须为10的倍数), 2=兑换42mm发弹量(金币需充足), 3=确认复活(读条完成时), 4=兑换立即复活(符合条件时，会立即买活), 5=远程兑换允许发弹量(满足要求时，会立即买弹), 6=远程兑换血量(满足要求时，会立即买血)
+
 	uint32 cmd_type = 1;  // 命令类型
 	uint32 param    = 2;  // 命令类型对应的参数
 }
@@ -71,13 +86,15 @@ message CommonCommand {
 // 2.2.25 HeroDeployModeEventCommand
 // 用途: 英雄部署模式指令 (频率: 1Hz)
 message HeroDeployModeEventCommand {
-	uint32 mode = 1;  // 模式(0=退出, 1=进入)
+	// mode 枚举值: 0=退出, 1=进入
+
+	uint32 mode = 1;  // 模式
 }
 
 // 2.2.27 RuneActivateCommand
 // 用途: 能量机关激活指令 (频率: 1Hz)
 message RuneActivateCommand {
-	uint32 activate = 1;  // 激活(1=开启)
+	uint32 activate = 1;  // 激活 (1=开启)
 }
 
 // 2.2.29 DartCommand
@@ -93,7 +110,7 @@ message DartCommand {
 // 用途: 哨兵控制指令请求 (频率: 1Hz)
 message SentryCtrlCommand {
 	// command_id 枚举值: 0=无效, 1=补血点补弹, 2=补给站实体补弹, 3=远程补弹, 4=远程回血, 5=确认复活, 6=确认花费金币复活, 7=地图标点, 8=切换为进攻姿态, 9=切换为防御姿态, 10=切换为移动姿态
-	uint32 command_id = 1;  // 指令编号(0=无效)
+	uint32 command_id = 1;  // 指令编号
 }
 
 // 2.2.34 AirSupportCommand
@@ -253,9 +270,10 @@ message RobotPosition {
 }
 
 // 2.2.13 Buff
-// 用途: Buff 效果信息 (频率: 获得增益时触发发送, 此后 1Hz 定频发送直到失去增益)
+// 用途: Buff 效果信息，获得增益时触发发送, 此后 1Hz 定频发送直到失去增益 (频率: 1Hz)
 message Buff {
 	// buff 类型枚举值: 1:攻击增益, ... 7:地形跨越增益(预备)
+
 	uint32 robot_id       = 1;  // 机器人 ID
 	uint32 buff_type      = 2;  // Buff 类型
 	int32  buff_level     = 3;  // Buff 增益值
@@ -330,9 +348,9 @@ message RuneStatusSync {
 	uint32 average_rings  = 3;  // 总环数
 }
 
-// 2.2.27 SentinelStatusSync
-// 用途: 哨兵姿态和弱化状态 (频率: 1Hz)
-message SentinelStatusSync {
+// 2.2.27 SentryStatusSync
+// 用途: 哨兵姿态相关信息同步 (频率: 1Hz)
+message SentryStatusSync {
 	uint32 posture_id  = 1;  // 姿态ID(1为进攻姿态,2为防御姿态,3为移动姿态)
 	bool   is_weakened = 2;  // 是否弱化
 }
@@ -344,9 +362,9 @@ message DartSelectTargetStatusSync {
 	bool   open      = 2;  // 闸门状态
 }
 
-// 2.2.31 GuardCtrlResult
+// 2.2.31 SentryCtrlResult
 // 用途: 哨兵控制指令结果反馈 (频率: 1Hz)
-message GuardCtrlResult {
+message SentryCtrlResult {
 	// result_code 枚举值: 0:成功, 其他:失败
 	uint32 command_id  = 1;  // 对应的指令编号
 	uint32 result_code = 2;  // 执行结果码
