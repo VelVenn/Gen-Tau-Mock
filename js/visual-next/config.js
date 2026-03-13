@@ -17,13 +17,13 @@ module.exports = {
       { value: 2, label: "解除无敌护甲展开" },
     ],
     // 前哨站状态
-    outpost_status: [
-      { value: 0, label: "无敌" },
-      { value: 1, label: "存活转" },
-      { value: 2, label: "存活停" },
-      { value: 3, label: "毁不可建" },
-      { value: 4, label: "毁可建" },
-    ],
+    // outpost_status: [
+    //   { value: 0, label: "无敌" },
+    //   { value: 1, label: "存活转" },
+    //   { value: 2, label: "存活停" },
+    //   { value: 3, label: "毁不可建" },
+    //   { value: 4, label: "毁可建" },
+    // ],
     // 连接状态
     connection_state: [
       { value: 0, label: "未连接" },

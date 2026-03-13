@@ -176,15 +176,19 @@ class ProtoParser {
           }
 
           if (enumComment) {
+            // 改为仅匹配英文逗号，并支持 \, 转义。匹配：数字、冒号/等号、(转义的逗号|非逗号的任意字符)+
             const enumKvMatch = enumComment.match(
-              /(\d+)\s*[:=：]\s*([^,，]+)/g,
+              /(\d+)\s*[:=：]\s*(?:\\,|[^,])+/g,
             );
             if (enumKvMatch) {
               parsedEnum = enumKvMatch.map((kv) => {
-                const parts = kv.split(/[:=：]/);
+                // 为了防止 label 内部也有冒号被误切，只按第一个匹配的冒号/等号分割
+                const splitIndex = kv.search(/[:=：]/);
+                const valStr = kv.substring(0, splitIndex).trim();
+                const labelStr = kv.substring(splitIndex + 1).trim();
                 return {
-                  value: parseInt(parts[0].trim()),
-                  label: parts[1].trim(),
+                  value: parseInt(valStr),
+                  label: labelStr.replace(/\\,/g, ','),
                 };
               });
             }
@@ -399,12 +403,14 @@ class ProtoParser {
     if (!match) return null;
 
     const enumPart = match[1];
-    const pairs = enumPart.split(/[,，、]/);
+    // 改为使用负向零宽断言进行分割，仅匹配前面不是反斜线 \ 的英文逗号
+    const pairs = enumPart.split(/(?<!\\),/);
 
     for (const pair of pairs) {
       const pairMatch = pair.trim().match(/^(\d+)\s*[:：]\s*(.+)/);
       if (pairMatch && parseInt(pairMatch[1]) === value) {
-        return pairMatch[2].trim();
+        // 返回时恢复转义的英文逗号
+        return pairMatch[2].trim().replace(/\\,/g, ',');
       }
     }
     return null;
