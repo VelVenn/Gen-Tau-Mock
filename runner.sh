@@ -106,7 +106,7 @@ start_mqtt_visual() {
     echo -e "${CYAN}===============================================================${NC}"
     echo ""
     
-    node js/mqtt-server-visual.js
+    node js/visual-next/mqtt-server-visual-next-gen.js
     
     echo ""
     read -p "按任意键返回菜单..." -n 1
@@ -120,9 +120,9 @@ start_udp_video() {
     echo -e "${CYAN}===============================================================${NC}"
     echo ""
     echo "请选择 UDP 视频流模式:"
-    echo "  1. 默认模式 (UDPVideoStreamer，较慢)"
-    echo "  2. 快速模式 (UDPVideoStreamerFast，较快)"
-    echo "  3. 相机模式 (UDPCameraStreamer，模拟相机设备)"
+    echo "  1. 默认模式 (UDPVideoStreamer，正常播放速度)"
+    echo "  2. 快速模式 (UDPVideoStreamerFast，最快播放速度)"
+    echo "  3. 相机模式 (UDPCameraStreamer，从摄像头获取图像)"
     echo ""
     read -p "请输入模式选项 (1-3) [默认: 1]: " udp_mode_choice
 
@@ -200,9 +200,9 @@ start_dual_mode() {
     
     echo ""
     echo "请选择 UDP 视频流模式:"
-    echo "  1. 默认模式 (UDPVideoStreamer，较慢)"
-    echo "  2. 快速模式 (UDPVideoStreamerFast，较快)"
-    echo "  3. 相机模式 (UDPCameraStreamer，模拟相机设备)"
+    echo "  1. 默认模式 (UDPVideoStreamer，正常播放速度)"
+    echo "  2. 快速模式 (UDPVideoStreamerFast，最快播放速度)"
+    echo "  3. 相机模式 (UDPCameraStreamer，从摄像头获取图像)"
     echo ""
     read -p "请输入模式选项 (1-3) [默认: 1]: " udp_mode_choice
 
