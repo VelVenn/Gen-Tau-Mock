@@ -22,9 +22,27 @@ async function startServer() {
     console.log('');
 
     try {
-        // 启动 UDP 视频流服务
-        console.log('📹 正在启动 UDP 视频流服务...');
-        udpStreamer = new UDPCameraStreamer(CONFIG.udp.port, CONFIG.udp.host);
+        // 解析命令行参数以选择服务模式
+        const args = process.argv.slice(2);
+        let serviceType = 'default';
+        if (args.includes('fast') || args.includes('--fast')) serviceType = 'fast';
+        if (args.includes('camera') || args.includes('--camera')) serviceType = 'camera';
+
+        // 启动 UDP 服务
+        console.log(`📹 正在启动 UDP 视频流服务 (模式: ${serviceType})...`);
+        switch (serviceType) {
+            case 'fast':
+                udpStreamer = new UDPVideoStreamerFast(CONFIG.udp.port, CONFIG.udp.host);
+                break;
+            case 'camera':
+                udpStreamer = new UDPCameraStreamer(CONFIG.udp.port, CONFIG.udp.host);
+                break;
+            case 'default':
+            default:
+                udpStreamer = new UDPVideoStreamer(CONFIG.udp.port, CONFIG.udp.host);
+                break;
+        }
+
         await udpStreamer.start();
         console.log('');
 
@@ -36,6 +54,7 @@ async function startServer() {
         console.log(`   ✅ UDP 视频流: ${CONFIG.udp.host}:${CONFIG.udp.port}`);
         console.log('');
         console.log('💡 提示:');
+        console.log('   - 启动不同模式: node UDPserver.js [fast | camera | default]');
         console.log('   - UDP 客户端会持续接收 HEVC 格式的视频流数据');
         console.log('   - 每个 UDP 包前8字节包含: 帧编号(2) + 分片序号(2) + 总字节数(4)');
         console.log('   - 按 Ctrl+C 停止服务器');

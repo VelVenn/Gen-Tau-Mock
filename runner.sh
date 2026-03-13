@@ -119,13 +119,32 @@ start_udp_video() {
     echo -e "${GREEN}   📹 启动 UDP 视频流传输服务端${NC}"
     echo -e "${CYAN}===============================================================${NC}"
     echo ""
+    echo "请选择 UDP 视频流模式:"
+    echo "  1. 默认模式 (UDPVideoStreamer，较慢)"
+    echo "  2. 快速模式 (UDPVideoStreamerFast，较快)"
+    echo "  3. 相机模式 (UDPCameraStreamer，模拟相机设备)"
+    echo ""
+    read -p "请输入模式选项 (1-3) [默认: 1]: " udp_mode_choice
+
+    local udp_mode=""
+    case $udp_mode_choice in
+        2) udp_mode="fast" ;;
+        3) udp_mode="camera" ;;
+        *) udp_mode="default" ;;
+    esac
+
+    clear
+    echo -e "${CYAN}===============================================================${NC}"
+    echo -e "${GREEN}   📹 启动 UDP 视频流传输服务端 (${udp_mode} 模式)${NC}"
+    echo -e "${CYAN}===============================================================${NC}"
+    echo ""
     echo "UDP 监听端口: 3334"
     echo ""
     echo "按 Ctrl+C 停止服务"
     echo -e "${CYAN}===============================================================${NC}"
     echo ""
     
-    node js/UDPserver.js
+    node js/UDPserver.js $udp_mode
     
     echo ""
     read -p "按任意键返回菜单..." -n 1
@@ -179,10 +198,25 @@ start_dual_mode() {
     
     sleep 2
     
+    echo ""
+    echo "请选择 UDP 视频流模式:"
+    echo "  1. 默认模式 (UDPVideoStreamer，较慢)"
+    echo "  2. 快速模式 (UDPVideoStreamerFast，较快)"
+    echo "  3. 相机模式 (UDPCameraStreamer，模拟相机设备)"
+    echo ""
+    read -p "请输入模式选项 (1-3) [默认: 1]: " udp_mode_choice
+
+    local udp_mode=""
+    case $udp_mode_choice in
+        2) udp_mode="fast" ;;
+        3) udp_mode="camera" ;;
+        *) udp_mode="default" ;;
+    esac
+    
     # 启动 UDP 视频流服务
-    nohup node js/UDPserver.js > udp-video.log 2>&1 &
+    nohup node js/UDPserver.js $udp_mode > udp-video.log 2>&1 &
     UDP_PID=$!
-    echo -e "${GREEN}✅ UDP 视频流服务已启动 (PID: $UDP_PID)${NC}"
+    echo -e "${GREEN}✅ UDP 视频流服务已启动 (${udp_mode} 模式, PID: $UDP_PID)${NC}"
     
     echo ""
     echo "服务进程 ID:"
