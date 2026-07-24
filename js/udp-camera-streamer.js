@@ -134,11 +134,11 @@ class UDPCameraStreamer {
       const end = Math.min(start + payloadSize, totalBytes);
       const payload = frameData.slice(start, end);
 
-      // u16 frameIdx; u16 secIdx; u32 frameLen; (Little Endian)
+      // u16 frameIdx; u16 secIdx; u32 frameLen; (Big Endian)
       const header = Buffer.alloc(8);
-      header.writeUInt16LE(currentFrameIdx, 0);       // 帧编号
-      header.writeUInt16LE(packetIndex & 0xffff, 2);  // 分片序号
-      header.writeUInt32LE(totalBytes >>> 0, 4);      // 总字节数
+      header.writeUInt16BE(currentFrameIdx, 0);       // 帧编号
+      header.writeUInt16BE(packetIndex & 0xffff, 2);  // 分片序号
+      header.writeUInt32BE(totalBytes >>> 0, 4);      // 总字节数
 
       const packet = Buffer.concat([header, payload]);
 

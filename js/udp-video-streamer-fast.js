@@ -170,11 +170,11 @@ class UDPVideoStreamerFast {
       const payload = frameData.slice(start, end);
 
       // 构造 8 字节头部 (与 C++ 端的 Header packed struct 紧密对应)
-      // u16 frameIdx; u16 secIdx; u32 frameLen; (Little Endian)
+      // u16 frameIdx; u16 secIdx; u32 frameLen; (Big Endian)
       const header = Buffer.alloc(8);
-      header.writeUInt16LE(currentFrameIdx, 0); // 帧编号 (2 bytes)
-      header.writeUInt16LE(packetIndex & 0xffff, 2); // 分片序号 (2 bytes)
-      header.writeUInt32LE(totalBytes >>> 0, 4); // 总字节数 (4 bytes)
+      header.writeUInt16BE(currentFrameIdx, 0); // 帧编号 (2 bytes)
+      header.writeUInt16BE(packetIndex & 0xffff, 2); // 分片序号 (2 bytes)
+      header.writeUInt32BE(totalBytes >>> 0, 4); // 总字节数 (4 bytes)
 
       const packet = Buffer.concat([header, payload]);
 

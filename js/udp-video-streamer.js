@@ -291,9 +291,9 @@ class UDPVideoStreamer {
       const payload = frameData.slice(start, end);
 
       const header = Buffer.alloc(8);
-      header.writeUInt16LE(this.frameNumber & 0xffff, 0); // 帧编号
-      header.writeUInt16LE(packetIndex, 2); // 分片序号
-      header.writeUInt32LE(totalBytes, 4); // 总字节数
+      header.writeUInt16BE(this.frameNumber & 0xffff, 0); // 帧编号
+      header.writeUInt16BE(packetIndex, 2); // 分片序号
+      header.writeUInt32BE(totalBytes, 4); // 总字节数
 
       packets.push(Buffer.concat([header, payload]));
     }
