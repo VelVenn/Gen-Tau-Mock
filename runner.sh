@@ -192,7 +192,7 @@ start_dual_mode() {
     echo ""
     
     # 启动 MQTT 可视化服务
-    nohup node js/mqtt-server-visual.js > mqtt-visual.log 2>&1 &
+    nohup node js/visual-next/mqtt-server-visual-next-gen.js > mqtt-visual.log 2>&1 &
     MQTT_PID=$!
     echo -e "${GREEN}✅ MQTT 可视化服务已启动 (PID: $MQTT_PID)${NC}"
     
